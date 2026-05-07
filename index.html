@@ -506,9 +506,36 @@ body{background:#fff!important;color:#111!important;font-size:11px;padding:0}
 <div class="ct"><span class="ci ci-n">✅</span> Today's Habits</div>
 <div class="hab-score"><div class="hs-v" id="hab-pct">0%</div><div class="hs-l">Daily Score</div></div>
 <div id="hab-list"></div>
-<button class="sbtn" onclick="saveHabits()" style="margin-top:14px">💾 Save Today · Earn XP</button>
 </div>
+
 <div class="cd">
+<div class="ct"><span class="ci ci-g">🥩</span> Nutrition — Today</div>
+<div class="walk-inp">
+<div class="walk-g"><label>Protein (g)</label><input type="number" id="nut-p" placeholder="135" inputmode="numeric"></div>
+<div class="walk-g"><label>Carbs (g)</label><input type="number" id="nut-c" placeholder="65" inputmode="numeric"></div>
+<div class="walk-g"><label>Fat (g)</label><input type="number" id="nut-f" placeholder="195" inputmode="numeric"></div>
+<div class="walk-g"><label>Calories</label><input type="number" id="nut-cal" placeholder="2575" inputmode="numeric"></div>
+</div>
+<div style="margin-top:6px"><label style="display:block;font-size:.65rem;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">What I ate today</label><textarea id="nut-notes" rows="3" placeholder="B: Eggs, avocado, sauerkraut&#10;L: Turkey sandwich on sourdough&#10;D: Salmon, asparagus, bone broth" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:var(--t1);font-family:'Outfit',sans-serif;font-size:.84rem;outline:none;resize:vertical"></textarea></div>
+</div>
+
+<div class="cd">
+<div class="ct"><span class="ci ci-s">⏱️</span> Fasting — Today</div>
+<div class="walk-inp">
+<div class="walk-g"><label>Fast Type</label><select id="fast-type"><option value="none">No fast today</option><option value="16hr">16-hour</option><option value="24hr">24-hour</option><option value="36hr">36-hour</option><option value="48hr">48-hour</option><option value="72hr">72-hour</option></select></div>
+<div class="walk-g"><label>Start Time</label><input type="time" id="fast-start" style="padding:8px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:var(--t1);font-family:'Outfit',sans-serif;font-size:.84rem"></div>
+<div class="walk-g"><label>End Time</label><input type="time" id="fast-end" style="padding:8px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:var(--t1);font-family:'Outfit',sans-serif;font-size:.84rem"></div>
+</div>
+<div style="display:flex;align-items:center;gap:8px;margin:6px 0"><span style="font-size:.82rem;color:var(--t3)">Hours fasted:</span><span style="font-size:1rem;font-weight:700;color:var(--glt)" id="fast-hrs">–</span></div>
+<div style="margin-top:4px"><label style="display:block;font-size:.65rem;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">How I felt (energy, mood, symptoms)</label><textarea id="fast-notes" rows="2" placeholder="Good energy until hour 18, slight brain fog around noon, no GI issues" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:var(--t1);font-family:'Outfit',sans-serif;font-size:.84rem;outline:none;resize:vertical"></textarea></div>
+</div>
+
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="sbtn" onclick="saveDaily()" style="flex:1;min-width:140px">💾 Save Today · Earn XP</button>
+<button class="sbtn2" onclick="icsDaily()" style="flex:1;min-width:140px;border-color:var(--blu);color:var(--blu)">📅 Export to Calendar</button>
+</div>
+
+<div class="cd" style="margin-top:14px">
 <div class="ct"><span class="ci ci-g">📅</span> Habit Streak (7 Days)</div>
 <div id="hab-history"></div>
 </div>
@@ -788,6 +815,7 @@ function buildCards(){
     }
     h+=`<button class="sbtn" onclick="saveWK('${k}')">💾 Save Workout · Earn XP</button>`;
     h+=`<button class="sbtn2" onclick="dlWK('${k}')">📱 Download Log</button>`;
+    h+=`<button class="sbtn2" onclick="icsWK('${k}')" style="border-color:var(--blu);color:var(--blu)">📅 Export to Calendar</button>`;
     h+=`<div id="log-${k}" style="margin-top:10px"></div></div></div>`;
   }
   c.innerHTML=h;
@@ -962,15 +990,159 @@ function renderWalkWeek(){const l=JSON.parse(localStorage.getItem('wt-walks')||'
 el.innerHTML=`<div class="xp-stat"><div class="xp-stat-v">${mi.toFixed(1)}</div><div class="xp-stat-l">Miles</div></div><div class="xp-stat"><div class="xp-stat-v">${tm}</div><div class="xp-stat-l">Minutes</div></div><div class="xp-stat"><div class="xp-stat-v">${tw.length}</div><div class="xp-stat-l">Walks</div></div>`}
 
 // ═══ DAILY HABITS ═══
-function renderHabits(){const el=document.getElementById('hab-list');if(!el)return;const td=new Date().toISOString().slice(0,10);const saved=JSON.parse(localStorage.getItem('wt-hab-'+td)||'{}');
-let h='';HABITS.forEach(hab=>{h+=`<div class="hab-row"><input type="checkbox" id="${hab.id}" ${saved[hab.id]?'checked':''}  onchange="updHabPct()"><label for="${hab.id}">${hab.label}<span class="hab-sub">${hab.sub}</span></label></div>`});
-el.innerHTML=h;updHabPct()}
+function renderHabits(){const el=document.getElementById('hab-list');if(!el)return;const td=new Date().toISOString().slice(0,10);const saved=JSON.parse(localStorage.getItem('wt-daily-'+td)||'{}');
+let h='';HABITS.forEach(hab=>{h+=`<div class="hab-row"><input type="checkbox" id="${hab.id}" ${saved.habits&&saved.habits[hab.id]?'checked':''}  onchange="updHabPct()"><label for="${hab.id}">${hab.label}<span class="hab-sub">${hab.sub}</span></label></div>`});
+el.innerHTML=h;updHabPct();
+// restore nutrition + fasting
+if(saved.nut){if(saved.nut.p)document.getElementById('nut-p').value=saved.nut.p;if(saved.nut.c)document.getElementById('nut-c').value=saved.nut.c;if(saved.nut.f)document.getElementById('nut-f').value=saved.nut.f;if(saved.nut.cal)document.getElementById('nut-cal').value=saved.nut.cal;if(saved.nut.notes)document.getElementById('nut-notes').value=saved.nut.notes}
+if(saved.fast){if(saved.fast.type)document.getElementById('fast-type').value=saved.fast.type;if(saved.fast.start)document.getElementById('fast-start').value=saved.fast.start;if(saved.fast.end)document.getElementById('fast-end').value=saved.fast.end;if(saved.fast.notes)document.getElementById('fast-notes').value=saved.fast.notes;calcFastHrs()}}
 function updHabPct(){const checked=document.querySelectorAll('#hab-list input[type="checkbox"]:checked').length;const pct=Math.round((checked/HABITS.length)*100);const el=document.getElementById('hab-pct');if(el)el.textContent=pct+'%'}
-function saveHabits(){const td=new Date().toISOString().slice(0,10);let data={};HABITS.forEach(h=>{const ck=document.getElementById(h.id);if(ck?.checked)data[h.id]=true});const cnt=Object.keys(data).length;localStorage.setItem('wt-hab-'+td,JSON.stringify(data));
-let xp=cnt*2;if(cnt>=HABITS.length)xp+=20;if(cnt>=Math.floor(HABITS.length*.8))xp+=10;
-addXP(xp);updStreak();updAllStats();renderHabHist();toast(`Habits saved! +${xp} XP ✅`)}
+
+// ═══ FASTING AUTO-CALC ═══
+document.addEventListener('change',function(e){if(e.target.id==='fast-start'||e.target.id==='fast-end')calcFastHrs()});
+function calcFastHrs(){const s=document.getElementById('fast-start')?.value,e=document.getElementById('fast-end')?.value,el=document.getElementById('fast-hrs');if(!s||!e||!el){if(el)el.textContent='–';return}
+const sm=parseInt(s.split(':')[0])*60+parseInt(s.split(':')[1]),em=parseInt(e.split(':')[0])*60+parseInt(e.split(':')[1]);let diff=em-sm;if(diff<0)diff+=1440;const hrs=Math.floor(diff/60),mins=diff%60;el.textContent=`${hrs}h ${mins}m`}
+
+// ═══ SAVE DAILY (habits + nutrition + fasting) ═══
+function saveDaily(){const td=new Date().toISOString().slice(0,10);
+let habits={};HABITS.forEach(h=>{const ck=document.getElementById(h.id);if(ck?.checked)habits[h.id]=true});
+const nut={p:document.getElementById('nut-p')?.value||'',c:document.getElementById('nut-c')?.value||'',f:document.getElementById('nut-f')?.value||'',cal:document.getElementById('nut-cal')?.value||'',notes:document.getElementById('nut-notes')?.value||''};
+const fast={type:document.getElementById('fast-type')?.value||'none',start:document.getElementById('fast-start')?.value||'',end:document.getElementById('fast-end')?.value||'',notes:document.getElementById('fast-notes')?.value||''};
+const data={habits,nut,fast,ts:Date.now()};
+localStorage.setItem('wt-daily-'+td,JSON.stringify(data));
+const cnt=Object.keys(habits).length;let xp=cnt*2;if(cnt>=HABITS.length)xp+=20;if(cnt>=Math.floor(HABITS.length*.8))xp+=10;
+if(nut.p||nut.c||nut.f)xp+=5;if(fast.type!=='none')xp+=10;
+addXP(xp);updStreak();updAllStats();renderHabHist();toast(`Daily saved! +${xp} XP ✅`)}
+
+// ═══ .ICS HELPERS ═══
+function icsDate(d){return d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')}
+function icsNow(){return icsDate(new Date())}
+function icsEsc(s){return(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n')}
+function downloadICS(filename,content){const blob=new Blob([content],{type:'text/calendar;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);toast('📅 Calendar file ready — tap to add!')}
+
+// ═══ WORKOUT .ICS EXPORT ═══
+function icsWK(wk){
+  const w=WK[wk],el=document.getElementById('ex-'+wk);if(!el)return;
+  const now=new Date();const end=new Date(now.getTime()+3600000);
+  let title=w.name.split('(')[0].trim();
+  let notes='WHOLE HEALTH — WORKOUT LOG\\n';
+  notes+='═══════════════════════════\\n';
+  notes+=w.name+'\\n';
+  notes+=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'\\n';
+  notes+='───────────────────────────\\n\\n';
+  let totalDone=0,totalEx=w.exercises.length,totalVol=0;
+
+  for(const ex of w.exercises){
+    if(ex.mode==='weight'){
+      const sw=document.getElementById('sw-'+ex.id);if(!sw)continue;
+      const rows=sw.querySelectorAll('.set-row');
+      const done=[...rows].some(r=>r.querySelector('.set-ck')?.classList.contains('done'));
+      if(done)totalDone++;
+      notes+=(done?'✓':'○')+' '+ex.name+'\\n';
+      rows.forEach((r,i)=>{
+        const wv=r.querySelector('[data-field="w"]')?.value||'–';
+        const rv=r.querySelector('[data-field="r"]')?.value||'–';
+        const tb=r.querySelector('.set-type');
+        const tp=['warmup','working','drop'].find(t=>tb?.classList.contains(t))||'working';
+        notes+='   Set '+(i+1)+' ('+tp+'): '+wv+'lb × '+rv+'\\n';
+        const wn=parseFloat(wv)||0,rn=parseInt(rv)||0;
+        if(tp!=='warmup')totalVol+=wn*rn;
+      });
+    } else if(ex.mode==='hold'){
+      const sw=document.getElementById('sw-'+ex.id);if(!sw)continue;
+      const rows=sw.querySelectorAll('.set-row');
+      const done=[...rows].some(r=>r.querySelector('.set-ck')?.classList.contains('done'));
+      if(done)totalDone++;
+      notes+=(done?'✓':'○')+' '+ex.name+'\\n';
+      rows.forEach((r,i)=>{const sv=r.querySelector('[data-field="s"]')?.value||'–';notes+='   Set '+(i+1)+': '+sv+' sec\\n'});
+    } else if(ex.mode==='cardio'){
+      const sw=document.getElementById('sw-'+ex.id);if(!sw)continue;
+      const rows=sw.querySelectorAll('.set-row');
+      const done=[...rows].some(r=>r.querySelector('.set-ck')?.classList.contains('done'));
+      if(done)totalDone++;
+      notes+=(done?'✓':'○')+' '+ex.name+'\\n';
+      rows.forEach((r,i)=>{const dv=r.querySelector('[data-field="d"]')?.value||'–';notes+='   Round '+(i+1)+': '+dv+' sec\\n'});
+    } else if(ex.mode==='walk'){
+      const sw=document.getElementById('sw-'+ex.id);if(!sw)continue;
+      const tv=sw.querySelector('[data-field="t"]')?.value||'–';
+      const done=sw.querySelector('.set-ck')?.classList.contains('done');
+      if(done)totalDone++;
+      notes+=(done?'✓':'○')+' '+ex.name+': '+tv+' min\\n';
+    } else {
+      const ck=el.querySelector('#chk-'+ex.id);
+      if(ck?.checked)totalDone++;
+      notes+=(ck?.checked?'✓':'○')+' '+ex.name+' — '+ex.detail+'\\n';
+    }
+    notes+='\\n';
+  }
+  notes+='───────────────────────────\\n';
+  notes+='Completed: '+totalDone+'/'+totalEx+' exercises\\n';
+  if(totalVol>0)notes+='Total Volume: '+totalVol.toLocaleString()+' lb\\n';
+
+  title+=` — ${totalDone}/${totalEx} done`;
+  if(totalVol>0)title+=` · ${totalVol.toLocaleString()} lb`;
+
+  const ics=`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//WholeHealth//WorkoutTracker//EN\r\nBEGIN:VEVENT\r\nDTSTART:${icsDate(now)}\r\nDTEND:${icsDate(end)}\r\nSUMMARY:${icsEsc(title)}\r\nDESCRIPTION:${notes}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+  downloadICS(`workout-${wk}-${now.toISOString().slice(0,10)}.ics`,ics);
+}
+
+// ═══ DAILY .ICS EXPORT ═══
+function icsDaily(){
+  const now=new Date();const td=now.toISOString().slice(0,10);
+  const dtStr=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+  // Gather habits
+  let habDone=0;
+  HABITS.forEach(h=>{if(document.getElementById(h.id)?.checked)habDone++});
+  const habPct=Math.round((habDone/HABITS.length)*100);
+
+  // Gather nutrition
+  const np=document.getElementById('nut-p')?.value||'–';
+  const nc=document.getElementById('nut-c')?.value||'–';
+  const nf=document.getElementById('nut-f')?.value||'–';
+  const ncal=document.getElementById('nut-cal')?.value||'–';
+  const nnotes=document.getElementById('nut-notes')?.value||'';
+
+  // Gather fasting
+  const ftype=document.getElementById('fast-type')?.value||'none';
+  const fstart=document.getElementById('fast-start')?.value||'';
+  const fend=document.getElementById('fast-end')?.value||'';
+  const fnotes=document.getElementById('fast-notes')?.value||'';
+  const fhrs=document.getElementById('fast-hrs')?.textContent||'–';
+
+  let title=`Daily Health Log — ${now.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+  let notes='WHOLE HEALTH — DAILY LOG\\n';
+  notes+='═══════════════════════════\\n';
+  notes+=dtStr+'\\n';
+  notes+='───────────────────────────\\n\\n';
+
+  // Habits section
+  notes+='HABITS ('+habDone+'/'+HABITS.length+' · '+habPct+'%)\\n';
+  HABITS.forEach(h=>{const ck=document.getElementById(h.id)?.checked;notes+=(ck?'✓':'○')+' '+h.label+'\\n'});
+  notes+='\\n';
+
+  // Nutrition section
+  notes+='NUTRITION\\n';
+  notes+='Protein: '+np+'g | Carbs: '+nc+'g | Fat: '+nf+'g | Cal: '+ncal+'\\n';
+  if(nnotes)notes+='Meals: '+nnotes.replace(/\n/g,' / ')+'\\n';
+  notes+='\\n';
+
+  // Fasting section
+  if(ftype!=='none'){
+    notes+='FASTING\\n';
+    notes+='Type: '+ftype+' | '+fstart+' → '+fend+' ('+fhrs+')\\n';
+    if(fnotes)notes+='Felt: '+fnotes.replace(/\n/g,' ')+'\\n';
+    notes+='\\n';
+  }
+
+  notes+='───────────────────────────\\n';
+
+  // All-day event
+  const ics=`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//WholeHealth//DailyLog//EN\r\nBEGIN:VEVENT\r\nDTSTART;VALUE=DATE:${td.replace(/-/g,'')}\r\nDTEND;VALUE=DATE:${td.replace(/-/g,'')}\r\nSUMMARY:${icsEsc(title)} · ${habPct}%\r\nDESCRIPTION:${notes}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+  downloadICS(`daily-health-${td}.ics`,ics);
+}
 function renderHabHist(){const el=document.getElementById('hab-history');if(!el)return;const now=new Date();let h='<div style="display:flex;gap:5px;flex-wrap:wrap">';
-for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);const saved=JSON.parse(localStorage.getItem('wt-hab-'+ds)||'{}');const cnt=Object.keys(saved).length;const pct=Math.round((cnt/HABITS.length)*100);const dn=d.toLocaleDateString('en-US',{weekday:'short'}).slice(0,2);
+for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);const saved=JSON.parse(localStorage.getItem('wt-daily-'+ds)||'{}');const cnt=saved.habits?Object.keys(saved.habits).length:0;const pct=Math.round((cnt/HABITS.length)*100);const dn=d.toLocaleDateString('en-US',{weekday:'short'}).slice(0,2);
 h+=`<div style="flex:1;text-align:center;min-width:36px"><div style="font-size:.55rem;font-weight:700;color:var(--t4);margin-bottom:3px">${dn}</div><div style="height:60px;background:var(--inp);border-radius:4px;position:relative;overflow:hidden"><div style="position:absolute;bottom:0;width:100%;height:${pct}%;background:linear-gradient(to top,var(--gld2),var(--gld));border-radius:0 0 4px 4px;transition:height .3s"></div></div><div style="font-size:.6rem;font-weight:700;color:var(--t3);margin-top:2px">${pct}%</div></div>`}
 h+='</div>';el.innerHTML=h}
 
@@ -990,8 +1162,8 @@ for(const k of Object.keys(WK)){const l=JSON.parse(localStorage.getItem('wt-'+k)
 const wl=JSON.parse(localStorage.getItem('wt-walks')||'[]');tw+=wl.length;mi=wl.reduce((s,w)=>s+(w.mi||0),0);
 const pr=Object.keys(JSON.parse(localStorage.getItem('wt-prs')||'{}')).length;
 // habit streaks
-let hs=0;const now=new Date();for(let i=0;i<30;i++){const d=new Date(now);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);const sv=JSON.parse(localStorage.getItem('wt-hab-'+ds)||'{}');if(Object.keys(sv).length>=Math.floor(HABITS.length*.6))hs++;else if(i>0)break}
-let hp=0;for(let i=0;i<30;i++){const d=new Date(now);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);const sv=JSON.parse(localStorage.getItem('wt-hab-'+ds)||'{}');if(Object.keys(sv).length===HABITS.length)hp++}
+let hs=0;const now=new Date();for(let i=0;i<30;i++){const d=new Date(now);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);const sv=JSON.parse(localStorage.getItem('wt-daily-'+ds)||'{}');const hc=sv.habits?Object.keys(sv.habits).length:0;if(hc>=Math.floor(HABITS.length*.6))hs++;else if(i>0)break}
+let hp=0;for(let i=0;i<30;i++){const d=new Date(now);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);const sv=JSON.parse(localStorage.getItem('wt-daily-'+ds)||'{}');const hc=sv.habits?Object.keys(sv.habits).length:0;if(hc===HABITS.length)hp++}
 return{tw,sk:getStreak(),pr,mv,mi,tl:tl.size,hp,hs}}
 function updAllStats(){const s=getStats();const se=document.getElementById('st-streak');if(se)se.textContent=s.sk;const we=document.getElementById('st-wkts');if(we)we.textContent=s.tw;const pe=document.getElementById('st-prs');if(pe)pe.textContent=s.pr;updXP();renderStreak()}
 
